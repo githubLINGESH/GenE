@@ -1,4 +1,3 @@
-Certainly! Below is a template for your README file. Please replace the placeholders with your actual information. Feel free to customize it further based on your specific requirements.
 
 ---
 
