@@ -4,10 +4,10 @@ import { MongoClient } from 'mongodb';
 export default async function handler(req, res) {
     const { id } = req.query;
 
+    console.log("comes here", id);
+
     // Connect to MongoDB
     const client = new MongoClient(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
     });
 
     try {
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         const tutorsCollection = database.collection('tutors');
 
         // Fetch tutor details based on id
-        const tutor = await tutorsCollection.findOne({ id: id });
+        const tutor = await tutorsCollection.findOne({ t_id: id });
 
         // Respond with tutor details in JSON format
         res.status(200).json(tutor);

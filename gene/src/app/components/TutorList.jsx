@@ -33,7 +33,7 @@
                 <img src={tutor.imageSrc} alt={tutor.name} className="tutor-image" />
                 <div className="tutor-info">
                 <p>{tutor.name}</p>
-                <button onClick={() => handleTutorClick(tutor.id)}>Chat</button>
+                <button onClick={() => handleTutorClick(tutor.t_id)}>Chat</button>
                 </div>
             </li>
             ))}

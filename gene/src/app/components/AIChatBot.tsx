@@ -61,45 +61,45 @@
 
     async function handleSend() {
         if (!inputText) {
-        return;
+            return;
         }
-
-        if (message.role === 'assistant' && tutor) {
-            try {
-                const response = await axios.post('/api/matchTutor', {
-                    tutorId: tutor._id,
-                    userId: message.userId,
-                });
     
-                if (response.data.success) {
-                    console.log('Matched with tutor successfully');
-                } else {
-                    console.error('Failed to match with tutor');
-                }
-            } catch (error:any) {
-                console.error('Error matching with tutor:', error.message);
-            }
-        }
         try {
-        setStatus("streaming");
-        const newHistory = [...history, { role: "user", content: inputText }];
-        setHistory(newHistory);
-        setInputText("");
-        const { message } = await llm.chat({
-            messages: newHistory,
-            stream: true,
-            onStream: ({ message }) => {
+            setStatus("streaming");
+            const newHistory = [...history, { role: "user", content: inputText }];
+            setHistory(newHistory);
+            setInputText("");
+            const { message } = await llm.chat({
+                messages: newHistory,
+                stream: true,
+                onStream: ({ message }) => {
+                    setHistory([...newHistory, message]);
+                    generateAudioWithCoquiTTS(message.content);
+    
+                    // Move the tutor matching logic here
+                    if (message.role === 'assistant' && tutor) {
+                        axios.post('/api/matchTutor', {
+                            tutorId: tutor.t_id,
+                        }).then((response) => {
+                            if (response.data.success) {
+                                console.log('Matched with tutor successfully');
+                            } else {
+                                console.error('Failed to match with tutor');
+                            }
+                        }).catch((error) => {
+                            console.error('Error matching with tutor:', error.message);
+                        });
+                    }
+                }
+            });
             setHistory([...newHistory, message]);
-            generateAudioWithCoquiTTS(message.content);
-            }
-        });
-        setHistory([...newHistory, message]);
-        setStatus("idle");
+            setStatus("idle");
         } catch (error: any) {
-        console.error(error);
-        window.alert("Something went wrong! " + error.message);
+            console.error(error);
+            window.alert("Something went wrong! " + error.message);
         }
     }
+    
     
 
     async function handleRecordClick() {
