@@ -3,22 +3,31 @@
     import useLLM, { OpenAIMessage } from "usellm";
     import axios from 'axios';
 
-    export default function AIChatBot({ tutor }) {
+
+    export default function AIChatBot({ tutor , userId}) {
     const [status, setStatus] = useState<Status>("idle");
     const [history, setHistory] = useState<OpenAIMessage[]>([
         {
         role: "assistant",
         content:
-            "I'm a chatbot powered by the ChatGPT API and developed using useLLM. Ask me anything!",
+            `I'm a ${tutor.name} powered by GenE. Ask me anything!`,
         },
     ]);
 
     const [inputText, setInputText] = useState("");
     const [audioData, setAudioData] = useState<ArrayBuffer | null>(null);
+    const [isAudioReady, setIsAudioReady] = useState(false);
+    const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+
 
     const llm = useLLM({
         serviceUrl: "https://usellm.org/api/llm",
     });
+
+
+        const isDetached = (buffer: Uint8Array): boolean => {
+            return buffer.buffer.byteLength === 0;
+        };
 
     const generateAudioWithCoquiTTS = async (text: string) => {
         try {
@@ -33,8 +42,17 @@
         });
     
         if (response.status === 200) {
-            console.log(response);
-            setAudioData(response.data);
+            const newAudioData = new Uint8Array(response.data);
+
+            if (audioData && !isDetached(new Uint8Array(audioData))) {
+                const combinedAudioData = new Uint8Array(audioData.byteLength + newAudioData.byteLength);
+                combinedAudioData.set(new Uint8Array(audioData), 0);
+                combinedAudioData.set(newAudioData, audioData.byteLength);
+                setAudioData(combinedAudioData.buffer);
+            } else {
+                setAudioData(newAudioData.buffer);
+            }
+            setIsAudioReady(true);
         } else {
             console.error('Error generating audio:', response.status);
         }
@@ -43,43 +61,72 @@
         }
     };
     
+        
     
 
-    const playAudioData = async (audioData: ArrayBuffer) => {
+    const playCombinedAudioData = async (audioData: ArrayBuffer) => {
         try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)() as AudioContext;
-        const audioBuffer = await audioContext.decodeAudioData(audioData);
-        const source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start();
-        } catch (error : any ) {
-        console.error('Error playing audio:', error.message);
+            const audioContext = new (window.AudioContext ||
+                window.webkitAudioContext)() as AudioContext;
+            const audioBuffer = await audioContext.decodeAudioData(audioData);
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            source.start();
+
+        } catch (error: any) {
+            console.error('Error playing audio:', error.message);
         }
     };
 
 
     async function handleSend() {
-        if (!inputText) {
+        if (!inputText || isGeneratingAudio) {
             return;
         }
+        const tutorInfo = {
+            subject: tutor.subject,
+            education: tutor.education,
+            expertise: tutor.expertise,
+            introduction: tutor.introduction
+        };
+
+        console.log(tutorInfo);
     
         try {
+
             setStatus("streaming");
-            const newHistory = [...history, { role: "user", content: inputText }];
+            const newHistory = [...history, { role: "user", content: inputText}];
             setHistory(newHistory);
             setInputText("");
+            console.log(tutorInfo);
             const { message } = await llm.chat({
                 messages: newHistory,
                 stream: true,
                 onStream: ({ message }) => {
-                    setHistory([...newHistory, message]);
-                    generateAudioWithCoquiTTS(message.content);
+                    // Limit the message content to 100 characters with ellipsis
+                    const limitedContent = message.content.length > 50
+                        ? message.content.substring(0, 300) + '...'
+                        : message.content;
+    
+                    const updatedMessage = { ...message, content: limitedContent , tutorInfo };
+                    setHistory([...newHistory, updatedMessage]);
+
+
+                    if (!isGeneratingAudio) {
+                        setAudioData(null)
+                        generateAudioWithCoquiTTS(updatedMessage.content);
+                        setIsGeneratingAudio(true);
+                    }
     
                     // Move the tutor matching logic here
-                    if (message.role === 'assistant' && tutor) {
+                    if (updatedMessage.role === 'assistant' && tutor && userId) {
                         axios.post('/api/matchTutor', {
-                            tutorId: tutor.t_id,
+                            tutorId: tutor.tutorId,
+                            userId: userId
                         }).then((response) => {
                             if (response.data.success) {
                                 console.log('Matched with tutor successfully');
@@ -98,7 +145,14 @@
             console.error(error);
             window.alert("Something went wrong! " + error.message);
         }
+        finally {
+            setIsGeneratingAudio(false);
+        }
+    
+    
+        setIsAudioReady(false);
     }
+    
     
     
 
@@ -155,14 +209,16 @@
             </button>
 
             <button
-            className="p-2 border rounded bg-gray-100 hover.bg-gray-200 active.bg-gray-300 dark.bg-white dark.text-black font-medium ml-2"
-            onClick={() => {
-                if (audioData) {
-                playAudioData(audioData);
-                }
-            }}
+                className={`p-2 border rounded ${
+                    isAudioReady ? "bg-orange-800" : "bg-gray-100"
+                } hover:bg-gray-200 active:bg-gray-300 dark:bg-white dark:text-black font-medium ml-2`}
+                onClick={() => {
+                    if (isAudioReady && audioData) {
+                        playCombinedAudioData(audioData);
+                    }
+                }}
             >
-            Play
+                Play
             </button>
         </div>
         </div>

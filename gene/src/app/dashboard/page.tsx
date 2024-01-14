@@ -96,8 +96,10 @@
 
             return (
                 <div className="flex flex-col h-full max-h-[600px] overflow-y-hidden">
+                    <div className="absolute flex top-[62px] left-0 h-full">
+                        <SideNavbar />
+                    </div>
                 <div className="flex w-full h-full">
-                    <SideNavbar/>
                     {/* Left side (Usellm Chat) */}
                     <div className="w-1/2 flex flex-col">
                     <div className="flex-1 overflow-y-auto px-4">

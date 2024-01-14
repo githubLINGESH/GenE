@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         const tutorsCollection = database.collection('tutors');
 
         // Fetch tutor details based on id
-        const tutor = await tutorsCollection.findOne({ t_id: id });
+        const tutor = await tutorsCollection.findOne({ tutorId: id });
 
         // Respond with tutor details in JSON format
         res.status(200).json(tutor);

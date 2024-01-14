@@ -29,11 +29,11 @@
         <h2>Tutors</h2>
         <ul className="tutor-list">
             {tutors.map((tutor) => (
-            <li key={tutor.id} className="tutor-item">
+            <li key={tutor.tutorId} className="tutor-item">
                 <img src={tutor.imageSrc} alt={tutor.name} className="tutor-image" />
                 <div className="tutor-info">
                 <p>{tutor.name}</p>
-                <button onClick={() => handleTutorClick(tutor.t_id)}>Chat</button>
+                <button onClick={() => handleTutorClick(tutor.tutorId)}>Chat</button>
                 </div>
             </li>
             ))}

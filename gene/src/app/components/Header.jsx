@@ -5,7 +5,7 @@ const Header = async ({ username }) => {
 const { userId } = auth();
 
 return (
-    <nav className='flex items-center justify-between px-6 py-4 mb-5 bg-blue-700'>
+    <nav className='flex items-center justify-between px-6 py-4 mb-5 bg-orange-900'>
     <div className='flex items-center'>
         <Link href='/'>
         <div className='text-lg font-bold text-white uppercase'>
@@ -13,14 +13,7 @@ return (
         </div>
         </Link>
     </div>
-    <div className="flex gap-6 mt-8">
-                <Link
-                href="/dashboard"
-                className="flex content-center gap-2 px-4 py-2 font-semibold text-white transition-colors duration-200 rounded-lg bg-primary-600 hover:bg-primary-700"
-                >
-                Create Course
-                </Link>
-                </div>
+
     <div className='flex items-center text-white'>
         {!userId && (
         <>
