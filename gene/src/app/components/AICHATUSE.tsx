@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import useLLM, { OpenAIMessage } from "usellm";
 import axios from 'axios';
 
-export default function AIChatBot({ tutor , userId}) {
 
+export default function AIChatBot({ tutor , userId}) {
 const [status, setStatus] = useState<Status>("idle");
 const [history, setHistory] = useState<OpenAIMessage[]>([
     {
@@ -87,74 +87,48 @@ async function handleSend() {
     if (!inputText || isGeneratingAudio) {
         return;
     }
-    const tutorInfo = {
-        subject: tutor.subject,
-        education: tutor.education,
-        expertise: tutor.expertise,
-        introduction: tutor.introduction
-    };
-
-    const introduction = tutorInfo.introduction
-
 
     try {
-
         setStatus("streaming");
-        const newHistory = [...history, { role: "user", content: inputText , introduction}];
+        const newHistory = [...history, { role: "user", content: inputText}];
         setHistory(newHistory);
         setInputText("");
-        console.log(tutorInfo);
-        const { message } = await llm.chat({
-            messages: newHistory,
-            stream: true,
-            onStream: ({ message }) => {
-                // Limit the message content to 100 characters with ellipsis
-                const limitedContent = message.content.length > 50
-                    ? message.content.substring(0, 300) + '...'
-                    : message.content;
 
-                const updatedMessage = { ...message, content: limitedContent , tutorInfo };
-                setHistory([...newHistory, updatedMessage]);
+        const response = await axios.post('http://127.0.0.1:5000/get-response', { input: inputText });
+        const botResponse = response.data.response;
 
+        setHistory(prevHistory => [...prevHistory, { role: "assistant", content: botResponse }]);
 
-                if (!isGeneratingAudio) {
-                    setAudioData(null)
-                    generateAudioWithCoquiTTS(updatedMessage.content);
-                    setIsGeneratingAudio(true);
+        if (!isGeneratingAudio) {
+            setAudioData(null);
+            generateAudioWithCoquiTTS(botResponse);
+            setIsGeneratingAudio(true);
+        }
+
+        if (tutor && userId) {
+            axios.post('/api/matchTutor', {
+                tutorId: tutor.tutorId,
+                userId: userId
+            }).then((response) => {
+                if (response.data.success) {
+                    console.log('Matched with tutor successfully');
+                } else {
+                    console.error('Failed to match with tutor');
                 }
+            }).catch((error) => {
+                console.error('Error matching with tutor:', error.message);
+            });
+        }
 
-                // Move the tutor matching logic here
-                if (updatedMessage.role === 'assistant' && tutor && userId) {
-                    axios.post('/api/matchTutor', {
-                        tutorId: tutor.tutorId,
-                        userId: userId
-                    }).then((response) => {
-                        if (response.data.success) {
-                            console.log('Matched with tutor successfully');
-                        } else {
-                            console.error('Failed to match with tutor');
-                        }
-                    }).catch((error) => {
-                        console.error('Error matching with tutor:', error.message);
-                    });
-                }
-            }
-        });
-        setHistory([...newHistory, message]);
-        setStatus("idle");
-    } catch (error: any) {
+    } catch (error:any) {
         console.error(error);
         window.alert("Something went wrong! " + error.message);
-    }
-    finally {
+    } finally {
         setIsGeneratingAudio(false);
+        setIsAudioReady(false);
     }
-
-
-    setIsAudioReady(false);
 }
-
-
+    
 
 
 async function handleRecordClick() {

@@ -1,9 +1,9 @@
     // SideNavbar.jsx
-    "use client"
+    'use client';
     import { useState } from 'react';
     import Link from 'next/link';
     import { FaHome, FaChartBar, FaBook } from 'react-icons/fa';
-    import CheckoutButton from './CheckoutButton'
+    import CheckoutButton from './CheckoutButton';
 
     const NavLink = ({ href, children }) => {
     return (
@@ -21,7 +21,7 @@
     };
 
     return (
-        <nav className={`bg-gray-500 p-4 text-white flex flex-col space-y-4 ${isOpen ? 'w-36' : 'w-6'}`}>
+        <nav className={`bg-gray-500 p-4 text-white flex flex-col space-y-4 ${isOpen ? 'w-36' : 'w-6'}`} style={{ position: 'fixed', height: '100vh' }}>
         <button className="mb-2" onClick={toggleNavbar}>
             {isOpen ? '<' : '>'}
         </button>
@@ -45,7 +45,7 @@
                 Courses
                 </a>
             </NavLink>
-            <CheckoutButton/>
+            <CheckoutButton />
             </div>
         )}
         </nav>

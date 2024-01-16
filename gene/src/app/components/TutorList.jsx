@@ -12,6 +12,7 @@
     };
 
     useEffect(() => {
+        if (typeof window !== 'undefined') {
         const fetchTutors = async () => {
         try {
             const response = await axios.get('/api/tutor');
@@ -22,6 +23,7 @@
         };
 
         fetchTutors();
+    }
     }, []);
 
     return (

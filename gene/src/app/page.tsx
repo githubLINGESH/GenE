@@ -20,8 +20,18 @@ export default function AIChatBot() {
     serviceUrl: "https://usellm.org/api/llm",
   });
 
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isTTSRequestInProgress, setIsTTSRequestInProgress] = useState(false);
+
   const generateAudioWithCoquiTTS = async (text: string) => {
     try {
+      if (isTTSRequestInProgress) {
+        console.log("TTS request is already in progress. Ignoring the new request.");
+        return;
+      }
+  
+      setIsTTSRequestInProgress(true);
+  
       const response = await axios.post('http://[::1]:5002/api/tts', null, {
         headers: {
           'Content-Type': 'application/json',
@@ -40,20 +50,29 @@ export default function AIChatBot() {
       }
     } catch (error: any) {
       console.error('Error generating audio:', error.message);
+    } finally {
+      setIsTTSRequestInProgress(false);
     }
   };
-  
-  
 
   const playAudioData = async (audioData: ArrayBuffer) => {
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)() as AudioContext;
-      const audioBuffer = await audioContext.decodeAudioData(audioData);
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContext.destination);
-      source.start();
-    } catch (error : any ) {
+      if (!isAudioPlaying) {
+        setIsAudioPlaying(true);
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)() as AudioContext;
+        const audioBuffer = await audioContext.decodeAudioData(audioData);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+
+        source.onended = () => {
+          setIsAudioPlaying(false);
+        };
+
+        source.start();
+      }
+    } catch (error: any) {
       console.error('Error playing audio:', error.message);
     }
   };

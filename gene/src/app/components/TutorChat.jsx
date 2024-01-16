@@ -1,8 +1,9 @@
     // TutorChat.jsx
-    import { useState, useEffect } from 'react';
-    import AIChatBot from './AIChatBot';
-    import axios from 'axios';
     import { useAuth } from "@clerk/nextjs";
+    import axios from 'axios';
+    import { useEffect, useState } from 'react';
+    import AIChatBot from './AIChatBot';
+    import TutorSession from  "./TutorSession";
 
     const TutorChat = ({ tutorId }) => {
     const [tutor, setTutor] = useState(null);
@@ -24,11 +25,15 @@
         fetchTutorDetails();
     }, [tutorId]);
 
+
     return (
         <div className='justify-space between'>
         <h2>Chat with {tutor ? tutor.name : 'Tutor'}</h2>
         {tutor && userId ? (
+            <>
             <AIChatBot tutor={tutor} userId={userId} />
+            <TutorSession tutor={tutor} userId={userId} />
+        </>
         ) : (
             <p>Loading tutor details...</p>
         )}

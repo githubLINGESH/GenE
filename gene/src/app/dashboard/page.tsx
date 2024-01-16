@@ -1,9 +1,17 @@
     "use client";
+    import axios from 'axios';
     import { useEffect, useRef, useState } from "react";
     import useLLM, { OpenAIMessage } from "usellm";
     import SideNavbar from "../components/SideNavbar";
+    import TutorSession from  "../components/TutorSession";
+
+
+    const updateUserDetails = async (userId, details) => {
+        await axios.put(`/api/user/${userId}`, details);
+        };
 
     export default function AIChatBot() {
+
     const [status, setStatus] = useState<Status>("idle");
     const [generatedContent, setGeneratedContent] = useState<string>("");
     const [courseName, setCourseName] = useState("");
@@ -86,16 +94,76 @@
 
     const Icon = status === "recording" ? Square : Mic;
 
-    const handleUploadCourse = () => {
-        // Use the generated content to upload the course
-        console.log("Course Name:", courseName);
-        console.log("Generated Content:", generatedContent);
-    
-            // Implement logic to upload the course to MongoDB or your desired platform
+    const handleUploadCourse = async (tutor, userId, courseName, generatedContent) => {
+        const courseData = {
+            tutorId: tutor.tutorId,
+            userId: userId,
+            courseName: courseName,
+            content: generatedContent
         };
+
+        try {
+            const response = await axios.post('/api/upload-course', courseData);
+            console.log('Course uploaded successfully:', response.data);
+        } catch (error) {
+            console.error('Error uploading course:', error.message);
+            // Handle error (e.g., show error message to the user)
+        }
+    };
+
+        const [isPersonalizationFormOpen, setIsPersonalizationFormOpen] = useState(false);
+        const [name, setName] = useState("");
+        const [preferences, setPreferences] = useState("");
+
+        // Function to handle personalization button click
+        const handlePersonalizationClick = () => {
+            setIsPersonalizationFormOpen(true);
+        };
+
+        // Function to handle form submission
+        const handleFormSubmit = async () => {
+            try {
+            // Call an API to update user details based on userId
+            await updateUserDetails(userId, { name, preferences });
+
+            // Close the form after successful submission
+            setIsPersonalizationFormOpen(false);
+            } catch (error) {
+            console.error("Error updating user details:", error.message);
+            // Handle error (e.g., display an error message to the user)
+            }
+        };
+
+            const PersonalizationForm = () => (
+                <div className="personalization-form">
+                <label htmlFor="name">Name:</label>
+                <input
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
+            
+                <label htmlFor="preferences">Preferences:</label>
+                <input
+                    type="text"
+                    id="preferences"
+                    value={preferences}
+                    onChange={(e) => setPreferences(e.target.value)}
+                />
+            
+                <button onClick={handleFormSubmit}>Submit</button>
+                </div>
+            );
 
             return (
                 <div className="flex flex-col h-full max-h-[600px] overflow-y-hidden">
+                    <TutorSession
+                        tutor={fetchedTutor}
+                        userId={fetchedUserId}
+                        handleUploadCourse={handleUploadCourse}
+                    />
+                    {isPersonalizationFormOpen && <PersonalizationForm />}
                     <div className="absolute flex top-[62px] left-0 h-full">
                         <SideNavbar />
                     </div>
