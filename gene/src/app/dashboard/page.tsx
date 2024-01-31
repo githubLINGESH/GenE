@@ -4,6 +4,7 @@
     import useLLM, { OpenAIMessage } from "usellm";
     import SideNavbar from "../components/SideNavbar";
     import TutorSession from  "../components/TutorSession";
+    import './page.css';
 
 
     const updateUserDetails = async (userId, details) => {
@@ -107,7 +108,6 @@
             console.log('Course uploaded successfully:', response.data);
         } catch (error) {
             console.error('Error uploading course:', error.message);
-            // Handle error (e.g., show error message to the user)
         }
     };
 
@@ -117,8 +117,8 @@
 
         // Function to handle personalization button click
         const handlePersonalizationClick = () => {
-            setIsPersonalizationFormOpen(true);
-        };
+            setIsPersonalizationFormOpen((prev) => !prev);
+            };
 
         // Function to handle form submission
         const handleFormSubmit = async () => {
@@ -126,50 +126,64 @@
             // Call an API to update user details based on userId
             await updateUserDetails(userId, { name, preferences });
 
-            // Close the form after successful submission
             setIsPersonalizationFormOpen(false);
             } catch (error) {
             console.error("Error updating user details:", error.message);
-            // Handle error (e.g., display an error message to the user)
             }
         };
 
             const PersonalizationForm = () => (
                 <div className="personalization-form">
-                <label htmlFor="name">Name:</label>
-                <input
+                <h2>Personalization Form</h2>
+                <div className="form-group">
+                    <label htmlFor="name">Name:</label>
+                    <input
                     type="text"
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                />
-            
-                <label htmlFor="preferences">Preferences:</label>
-                <input
+                    className="input-field"
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="preferences">Preferences:</label>
+                    <input
                     type="text"
                     id="preferences"
                     value={preferences}
                     onChange={(e) => setPreferences(e.target.value)}
-                />
-            
-                <button onClick={handleFormSubmit}>Submit</button>
+                    className="input-field"
+                    />
+                </div>
+                <div className="form-group">
+                    <button onClick={handleFormSubmit} className="submit-button">Submit</button>
+                </div>
                 </div>
             );
+            
 
             return (
                 <div className="flex flex-col h-full max-h-[600px] overflow-y-hidden">
                     <TutorSession
-                        tutor={fetchedTutor}
-                        userId={fetchedUserId}
+                        tutor
+                        userId
                         handleUploadCourse={handleUploadCourse}
                     />
-                    {isPersonalizationFormOpen && <PersonalizationForm />}
                     <div className="absolute flex top-[62px] left-0 h-full">
                         <SideNavbar />
                     </div>
                 <div className="flex w-full h-full">
                     {/* Left side (Usellm Chat) */}
                     <div className="w-1/2 flex flex-col">
+                    <button
+                    className="p-2 border rounded bg-gray-100 hover:bg-gray-200 active:bg-gray-300 dark:bg-white dark:text-black font-medium ml-2"
+                    onClick={handlePersonalizationClick}
+                    >
+                        {isPersonalizationFormOpen ? 'Close Personalization' : 'Open Personalization'}
+                    </button>
+
+                    {/* Render the PersonalizationForm if it's open */}
+                    {isPersonalizationFormOpen && <PersonalizationForm />}
                     <div className="flex-1 overflow-y-auto px-4">
                         <ChatMessages messages={history} />
                     </div>

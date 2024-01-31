@@ -30,9 +30,6 @@
     // Step 4: Upload the synchronized video to Cloudinary
     const cloudinaryResponse = await uploadToCloudinary(synchronizedVideo);
 
-    // Step 5: Handle any additional logic or response as needed
-    // For example, you might save the cloudinaryResponse URL to your database.
-
     // Return a response to the client
     return res.status(200).json({ message: 'Course uploaded successfully', cloudinaryResponse });
     }
@@ -85,14 +82,56 @@ const COQUI_TTS_API_URL = 'http://[::1]:5002/api/tts';
     }
 
     async function synchronizeAudioAndVideo(videoLink, audioData) {
-    // Implement logic to synchronize audio and video
-    // This might involve using a video editing library or tool
-    // For simplicity, we're assuming you have a synchronized video file here
-    const synchronizedVideo = await YourVideoSynchronizationLibrary.synchronize(videoLink, audioData);
-
-    return synchronizedVideo;
-    }
-
+        try {
+            const tempAudioPath = 'tempAudio.wav';
+            const tempVideoPath = 'tempVideo.mp4';
+        
+            // Save the audioData to a temporary audio file
+            await writeFileAsync(tempAudioPath, audioData);
+            
+            const axios = require('axios');
+            const videoResponse = await axios.get(videoLink, { responseType: 'stream' });
+        
+            // Save the video stream to a temporary video file
+            const videoWriter = videoResponse.data.pipe(fs.createWriteStream(tempVideoPath));
+            await new Promise((resolve, reject) => {
+                videoWriter.on('finish', resolve);
+                videoWriter.on('error', reject);
+            });
+        
+            // Use FFmpeg to combine the audio and video
+            await new Promise((resolve, reject) => {
+                ffmpeg()
+                .input(tempAudioPath)
+                .input(tempVideoPath)
+                .audioCodec('aac')
+                .videoCodec('libx264')
+                .on('end', () => {
+                    console.log('Audio and video synchronization complete.');
+                    resolve();
+                })
+                .on('error', (err) => {
+                    console.error('Error synchronizing audio and video:', err);
+                    reject(err);
+                })
+                .save('synchronizedVideo.mp4');
+            });
+        
+            // Read the synchronized video file into a buffer
+            const synchronizedVideo = fs.readFileSync('synchronizedVideo.mp4');
+        
+            // Clean up temporary files (optional)
+            fs.unlinkSync(tempAudioPath);
+            fs.unlinkSync(tempVideoPath);
+            fs.unlinkSync('synchronizedVideo.mp4');
+        
+            return synchronizedVideo;
+            } catch (error) {
+            console.error('Error synchronizing audio and video:', error);
+            throw error;
+            }
+        }
+        
     async function uploadToCloudinary(synchronizedVideo) {
         try {
             const cloudinaryResponse = await cloudinary.v2.uploader.upload(synchronizedVideo, {

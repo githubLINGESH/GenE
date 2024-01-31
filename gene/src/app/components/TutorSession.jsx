@@ -1,12 +1,7 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 
 const TutorSession = ({ tutor, userId }) => {
-    const { setTutor, setUserId } = useContext(SomeContext);
 
-    useEffect(() => {
-        setTutor(tutor);
-        setUserId(userId);
-    }, [tutor, userId]);
 
     return null;
 };
